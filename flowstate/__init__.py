@@ -1,11 +1,20 @@
 """
-Synapse - Ambient Context Weaver
+Flowstate - Ambient Context Weaver
 
-A revolutionary workflow tool that builds a live knowledge graph of your
-development environment, surfacing contextual insights without explicit commands.
+Production-ready ambient context monitoring with:
+- Persistent knowledge graph with semantic search
+- Real process correlation
+- Natural language queries
+- IDE integration API
 """
 
-from .daemon import SynapseDaemon, KnowledgeGraph, ContextNode, ContextEdge
+from .daemon import (
+    FlowstateDaemon,
+    KnowledgeGraph,
+    ContextNode,
+    ContextEdge,
+    ContextQueryResult
+)
 
-__version__ = "0.1.0"
-__all__ = ["SynapseDaemon", "KnowledgeGraph", "ContextNode", "ContextEdge"]
+__version__ = "1.0.0"
+__all__ = ["FlowstateDaemon", "KnowledgeGraph", "ContextNode", "ContextEdge", "ContextQueryResult"]

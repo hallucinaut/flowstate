@@ -1,124 +1,25 @@
 # Flowstate 🌊
 
-> **The ambient context Weaver for knowledge workers**
+> **Ambient context monitoring for developers**
 
 ---
 
-## The Old Way
+## What This Is
 
-Developers today suffer from **fragmented context**. Your workflow is splintered across:
+Flowstate is a **background daemon** that monitors your development environment and builds a knowledge graph of your codebase. It tracks:
 
-- **Terminal** - running commands, viewing logs
-- **IDE** - writing code, debugging
-- **Browser** - documentation, Stack Overflow, specs
-- **Git** - commits, branches, diffs
-
-**The cost:** 23+ minutes of daily context-switching overhead. You constantly lose your place, forget what you were working on, and waste time re-orienting yourself.
-
-Traditional tools try to solve this with:
-- Tab managers (passive, you remember to use them)
-- Note-taking apps (manual, you have to remember to document)
-- Chatbots (explicit prompts, you have to ask)
-
-**None of these work because they require you to interrupt your flow to manage context.**
+- **File changes** - Watches for code modifications and analyzes imports
+- **Running processes** - Correlates processes with their working directories
+- **Access patterns** - Learns which files you work with together
 
 ---
 
-## The New Paradigm
+## What This Is NOT
 
-**Flowstate is different.** It's an **ambient daemon** that runs silently in the background, building a live knowledge graph of your entire development environment.
-
-### How It Works
-
-1. **File System Monitoring** - Watches your codebase for changes, automatically analyzes imports and dependencies
-2. **Process Monitoring** - Tracks running processes and correlates them with files
-3. **Knowledge Graph Construction** - Builds a persistent graph connecting files, processes, and context
-4. **Ambient Suggestions** - Surfaces relevant context **before you ask** - no prompts, no commands
-
-### The Magic
-
-```python
-# You're editing a Python file
-from database import connect
-
-# Flowstate KNOWS this file imports from database.py
-# It also knows database.py is used by your running pytest process
-# It SURFACES this connection automatically:
-
-[Flowstate] Context insights:
-  → file: database.py (imported by current file)
-  → process: 12345 (pytest running, uses database.py)
-```
-
-**No commands. No prompts. Just awareness.**
-
----
-
-## Under the Hood
-
-### Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Flowstate Daemon                      │
-├─────────────────────────────────────────────────────────┤
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │ File Monitor │  │ Process Mon. │  │   Graph DB   │  │
-│  │  (watchdog)  │  │  (psutil)    │  │  (SQLite)    │  │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │
-│         │                  │                  │          │
-│         └──────────────────┼──────────────────┘          │
-│                            │                             │
-│                    ┌───────▼───────┐                     │
-│                    │ Knowledge     │                     │
-│                    │ Graph Engine  │                     │
-│                    │  (BFS, scoring)│                    │
-│                    └───────┬───────┘                     │
-│                            │                             │
-│                    ┌───────▼───────┐                     │
-│                    │ Ambient       │                     │
-│                    │ Suggestions   │                     │
-│                    └───────────────┘                     │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Key Technologies
-
-- **watchdog** - Cross-platform file system event monitoring
-- **psutil** - Process and system monitoring
-- **SQLite** - Persistent knowledge graph storage
-- **asyncio** - Non-blocking concurrent monitoring
-- **AnyIO** - Cross-platform async primitives
-
-### The Knowledge Graph
-
-```python
-# Every entity becomes a node in the graph
-ContextNode(
-    id="file:/path/to/code.py",
-    kind="file",
-    path="/path/to/code.py",
-    content="from database import connect",
-    metadata={"size": 1234}
-)
-
-# Relationships become edges
-ContextEdge(
-    source="file:/path/to/code.py",
-    target="file:/path/to/database.py",
-    relationship="imports",
-    strength=1.0
-)
-```
-
-### Ambient Intelligence
-
-Flowstate doesn't wait for you to ask. It continuously:
-
-1. **Analyzes** every file change for import relationships
-2. **Correlates** running processes with active files
-3. **Scores** relevance based on graph topology and recency
-4. **Surfaces** the most relevant context automatically
+- ❌ **Not an IDE plugin** - No VSCode or JetBrains integration
+- ❌ **Not a browser monitor** - Doesn't track your web activity
+- ❌ **Not AI-powered** - No machine learning, just graph queries
+- ❌ **Not magic** - You still need to understand your code
 
 ---
 
@@ -146,43 +47,164 @@ pip install -e ".[dev]"
 flowstate
 ```
 
-Runs in the foreground, monitoring the current directory and all subdirectories.
+Monitors the current directory and prints context insights when files change.
 
 ### As a Library
+
+```python
+from flowstate import FlowstateDaemon, KnowledgeGraph
+
+# Create a knowledge graph (persists to ~/.config/flowstate/flowstate.db)
+graph = KnowledgeGraph()
+
+# Query the graph
+result = graph.query("database connection")
+for node in result.results:
+    print(f"{node.path}: {node.content[:100]}")
+
+# Get related files
+related = graph.get_neighbors("file:/path/to/main.py")
+for file in related:
+    print(f"Related: {file.path}")
+```
+
+---
+
+## API Reference
+
+### KnowledgeGraph
+
+```python
+from flowstate import KnowledgeGraph
+
+graph = KnowledgeGraph()
+
+# Add a node
+from flowstate import ContextNode
+node = ContextNode(
+    id="file:/path/to/code.py",
+    kind="file",
+    path="/path/to/code.py",
+    content="print('hello')"
+)
+graph.add_node(node)
+
+# Add an edge
+from flowstate import ContextEdge
+edge = ContextEdge(
+    source="file:/path/to/a.py",
+    target="file:/path/to/b.py",
+    relationship="imports",
+    strength=1.0
+)
+graph.add_edge(edge)
+
+# Query the graph
+result = graph.query("database")
+print(result.results)  # List of ContextNode
+print(result.explanations)  # List of why each matched
+
+# Get neighbors
+neighbors = graph.get_neighbors("file:/path/to/main.py")
+
+# Find path between nodes
+path = graph.find_path("file:/path/to/a.py", "file:/path/to/b.py")
+```
+
+### FlowstateDaemon
 
 ```python
 from flowstate import FlowstateDaemon
 
 daemon = FlowstateDaemon(watch_paths=["./src", "./tests"])
 
-async def on_insights(insights):
-    print("Relevant context:", insights)
+def on_insights(suggestions):
+    """Callback for ambient suggestions."""
+    for node, explanation in suggestions:
+        print(f"{node.path}: {explanation}")
 
 daemon.register_suggestion_callback(on_insights)
 daemon.start()
+
+# Query while running
+result = daemon.query("user authentication")
+print(result.results)
+
+# Get context for a path
+context = daemon.get_context("/path/to/project")
+print(context)
+
+# Stop the daemon
+daemon.stop()
 ```
+
+---
+
+## How It Works
+
+### Knowledge Graph
+
+The core is a SQLite database with two main tables:
+
+1. **nodes** - Files, processes, and other entities
+2. **edges** - Relationships between nodes (imports, executes, etc.)
+
+### File Monitoring
+
+Uses `watchdog` to detect file changes:
+- On creation/modification, reads file content
+- Parses import statements (Python and JavaScript)
+- Creates edges between files
+
+### Process Monitoring
+
+Uses `psutil` to scan running processes:
+- Tracks PID, name, command line, working directory
+- Creates edges between processes and files in their cwd
+
+### Query System
+
+Natural language queries work by:
+1. Searching file paths for matching terms
+2. Searching file content for matching terms
+3. Searching metadata fields
+4. Boosting results based on graph connectivity
+
+---
+
+## Limitations
+
+### What Works Well
+
+- ✅ File import tracking (Python, JavaScript)
+- ✅ Process correlation with working directories
+- ✅ Fast graph traversal and path finding
+- ✅ Persistent storage between sessions
+- ✅ Basic natural language queries
+
+### What Doesn't Work
+
+- ❌ **No real "ambient suggestions"** - The daemon monitors files but doesn't proactively push insights
+- ❌ **No browser integration** - Doesn't track your web activity
+- ❌ **No IDE plugin** - No VSCode, JetBrains, or other editor integration
+- ❌ **No semantic understanding** - Queries are text-based, not AI-powered
+- ❌ **No actual context awareness** - Doesn't know what you're "thinking about"
 
 ---
 
 ## Proof of Concept
 
-See `simulate_user.py` for a complete integration test that simulates human workflow and verifies Flowstate's ambient awareness.
+Run the integration test:
 
 ```bash
 python simulate_user.py
 ```
 
----
-
-## Why This Matters
-
-**Flowstate is not a tool you use. It's a tool that uses you.**
-
-- **Invisible UI** - Runs entirely in the background
-- **Intent-Based** - You define the end state (working code), it builds the infrastructure
-- **Hyper-Contextual** - Unifies terminal, IDE, and browser into one memory graph
-
-This is the first workflow tool that **anticipates your needs** rather than reacting to your commands.
+This simulates a developer workflow and verifies:
+- Files are indexed correctly
+- Import relationships are inferred
+- Queries return relevant results
+- The graph persists between sessions
 
 ---
 
@@ -192,13 +214,32 @@ MIT - Open source, free for personal and commercial use.
 
 ---
 
-## The Future
+## Future Possibilities
 
-This is just the beginning. Next iterations will add:
+If you want to extend this:
 
-- Browser DOM monitoring
-- IDE plugin integration (VSCode, JetBrains)
-- Natural language queries over the knowledge graph
-- Cross-device context synchronization
+1. **Add IDE integration** - Create a VSCode extension that uses the daemon API
+2. **Add semantic search** - Integrate with an embedding model for better queries
+3. **Add more file types** - Support Go, Rust, TypeScript, etc.
+4. **Add user feedback** - Learn which suggestions are useful
+5. **Add project detection** - Auto-detect project boundaries
 
-**The goal:** A truly ambient computing layer that understands your work without you having to explain it.
+---
+
+## Honesty Check
+
+This tool is **functional but limited**. It does what it says:
+
+- It monitors files ✅
+- It builds a graph ✅
+- It can query the graph ✅
+
+But it's **not** the "ambient intelligence" the original README claimed. The suggestions are just connected files, not actual insights. The process correlation is basic (just working directory matching).
+
+If you want a true ambient context tool, you'd need:
+- IDE plugin (to know what you're editing)
+- Browser integration (to know what docs you're reading)
+- AI/ML (to understand your intent)
+- Real-time analysis (not just file watching)
+
+This is a **foundation** for such a tool, not the finished product.
